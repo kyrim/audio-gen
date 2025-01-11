@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::sync::{Arc, Mutex};
 
 use rodio::Sink;
@@ -55,98 +56,81 @@ fn main() {
         .build(&event_loop)
         .unwrap();
 
+    // Track active keys
+    let mut active_keys = HashSet::new();
+
     // 7) Run event loop.
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Poll; // Change to Wait if you prefer sleeping
 
-        if let Event::WindowEvent { event, .. } = event { match event {
-            // Process key input events
-            WindowEvent::KeyboardInput {
-                input:
-                    KeyboardInput {
-                        state,
-                        virtual_keycode: Some(key_code),
-                        ..
-                    },
-                ..
-            } => {
-                // Exit if user presses q or Esc.
-                if key_code == VirtualKeyCode::Escape || key_code == VirtualKeyCode::Q {
-                    println!("Exiting. Goodbye!");
+        if let Event::WindowEvent { event, .. } = event {
+            match event {
+                // Process key input events
+                WindowEvent::KeyboardInput {
+                    input:
+                        KeyboardInput {
+                            state,
+                            virtual_keycode: Some(key_code),
+                            ..
+                        },
+                    ..
+                } => {
+                    // Exit if user presses q or Esc.
+                    if key_code == VirtualKeyCode::Escape || key_code == VirtualKeyCode::Q {
+                        println!("Exiting. Goodbye!");
+                        *control_flow = ControlFlow::Exit;
+                        return;
+                    }
+
+                    // Handle key press and release
+                    let ch = match key_code {
+                        VirtualKeyCode::Z => 'z',
+                        VirtualKeyCode::X => 'x',
+                        VirtualKeyCode::C => 'c',
+                        VirtualKeyCode::V => 'v',
+                        VirtualKeyCode::B => 'b',
+                        VirtualKeyCode::N => 'n',
+                        VirtualKeyCode::M => 'm',
+                        _ => '\0',
+                    };
+
+                    if ch != '\0' {
+                        match state {
+                            ElementState::Pressed => {
+                                if !active_keys.contains(&ch) {
+                                    println!("Pressed: {:?}", key_code);
+                                    if let Some((_, freq)) =
+                                        freq_map.iter().find(|(k, _)| *k == ch)
+                                    {
+                                        let mut locked = poly_arc.lock().unwrap();
+                                        locked.play(*freq);
+                                    }
+                                    active_keys.insert(ch);
+                                }
+                            }
+                            ElementState::Released => {
+                                if active_keys.contains(&ch) {
+                                    println!("Released: {:?}", key_code);
+                                    if let Some((_, freq)) =
+                                        freq_map.iter().find(|(k, _)| *k == ch)
+                                    {
+                                        let mut locked = poly_arc.lock().unwrap();
+                                        locked.stop(*freq);
+                                    }
+                                    active_keys.remove(&ch);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Exit on window close request.
+                WindowEvent::CloseRequested => {
+                    println!("Window close requested, exiting.");
                     *control_flow = ControlFlow::Exit;
-                    return;
                 }
-
-                // For demonstration we choose to print which key is pressed or released.
-                match state {
-                    ElementState::Pressed => {
-                        println!("Pressed: {:?}", key_code);
-
-                        // We use the ReceivedCharacter event for actual characters
-                        // normally. However, here we map using VirtualKeyCode.
-                        // Depending on your keyboard layout, you might prefer to handle
-                        // note_on in ReceivedCharacter. Adjust as needed.
-                        let ch = match key_code {
-                            VirtualKeyCode::Z => 'z',
-                            VirtualKeyCode::X => 'x',
-                            VirtualKeyCode::C => 'c',
-                            VirtualKeyCode::V => 'v',
-                            VirtualKeyCode::B => 'b',
-                            VirtualKeyCode::N => 'n',
-                            VirtualKeyCode::M => 'm',
-                            _ => '\0',
-                        };
-                        if ch != '\0' {
-                            if let Some((_, freq)) = freq_map.iter().find(|(k, _)| *k == ch)
-                            {
-                                let mut locked = poly_arc.lock().unwrap();
-                                locked.play(*freq);
-                            }
-                        }
-                    }
-                    ElementState::Released => {
-                        println!("Released: {:?}", key_code);
-                        // You can choose to release the note when key is released.
-                        // If you want the note to be tied directly to the key press and release,
-                        // call note_off() here.
-                        let ch = match key_code {
-                            VirtualKeyCode::Z => 'z',
-                            VirtualKeyCode::X => 'x',
-                            VirtualKeyCode::C => 'c',
-                            VirtualKeyCode::V => 'v',
-                            VirtualKeyCode::B => 'b',
-                            VirtualKeyCode::N => 'n',
-                            VirtualKeyCode::M => 'm',
-                            _ => '\0',
-                        };
-                        if ch != '\0' {
-                            if let Some((_, freq)) = freq_map.iter().find(|(k, _)| *k == ch)
-                            {
-                                let mut locked = poly_arc.lock().unwrap();
-                                locked.stop(*freq);
-                            }
-                        }
-                    }
-                }
+                _ => {}
             }
-
-            // Process text input events (if needed)
-            WindowEvent::ReceivedCharacter(ch) => {
-                // This is another way of handling actual character input.
-                // For instance, if the user presses 'q' via text input.
-                if ch == 'q' {
-                    println!("Exiting. Goodbye!");
-                    *control_flow = ControlFlow::Exit
-                }
-                // Optionally handle other characters here if necessary.
-            }
-
-            // Exit on window close request.
-            WindowEvent::CloseRequested => {
-                println!("Window close requested, exiting.");
-                *control_flow = ControlFlow::Exit;
-            }
-            _ => {}
-        } }
+        }
     });
 }

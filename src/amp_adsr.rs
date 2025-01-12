@@ -18,6 +18,8 @@ pub struct AmpAdsr {
     // The amplitude at the exact moment release was triggered
     release_start_amp: f32,
 
+    retrigger_start_amp: f32,
+
     // Sample rate
     sample_rate: f32,
 }
@@ -35,12 +37,14 @@ impl AmpAdsr {
             released: false,
             release_start_time: 0.0,
             release_start_amp: 0.0,
+            retrigger_start_amp: 0.0,
             sample_rate,
         }
     }
 
     /// Called when the note first starts (re-trigger).
     pub fn trigger(&mut self) {
+        self.retrigger_start_amp = self.get_amplitude();
         self.current_time = 0.0;
         self.released = false;
         self.release_start_time = 0.0;
@@ -59,7 +63,8 @@ impl AmpAdsr {
     /// Return the current amplitude (0..1).
     pub fn get_amplitude(&self) -> f32 {
         // Break envelope into time regions
-        let atk_time = self.attack;
+        let retrigger_time = 0.03;
+        let atk_time = retrigger_time + self.attack;
         let dec_time = atk_time + self.decay; // Attack + Decay
         let rel_time = self.release;
 
@@ -76,7 +81,15 @@ impl AmpAdsr {
             }
         } else {
             // Attack -> Decay -> Sustain (before release)
-            if self.current_time < atk_time {
+            if self.current_time < retrigger_time {
+                if  self.current_time >= retrigger_time {
+                    0.0
+                } else {
+                    // Fade from release_start_amp to 0 over 'release' seconds
+                    let ratio =  self.current_time / retrigger_time;
+                    self.retrigger_start_amp * (1.0 - ratio)
+                }
+            } else if self.current_time < atk_time {
                 // Attack: amplitude 0..1
                 self.current_time / atk_time
             } else if self.current_time < dec_time {

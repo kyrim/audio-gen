@@ -15,6 +15,10 @@ impl SineWave {
             sample_rate,
         }
     }
+
+    pub fn reset_phase(&mut self) {
+        self.phase = 0.0; // Reset the oscillator phase
+    }
 }
 
 impl AudioSource for SineWave {

@@ -20,6 +20,7 @@ impl Voice {
 
     pub fn play(&mut self, freq: f32) {
         self.osc.set_frequency(freq);
+        self.osc.reset_phase(); // Reset the phase of the oscillator
         self.env.trigger();
         self.active = true;
     }
@@ -63,11 +64,23 @@ impl PolySynth {
     }
 
     pub fn play(&mut self, freq: f32) {
-        if let Some(v) = self.voices.iter_mut().find(|v| !v.active) {
-            v.play(freq);
+        // First, try to find an inactive voice
+        if let Some(voice) = self.voices.iter_mut().find(|v| !v.active) {
+            voice.play(freq); // Use the inactive voice
         } else {
-            // Voice-stealing: reuse voice 0
-            self.voices[0].play(freq);
+            // No inactive voice: Find the closest frequency to `freq`
+            let closest_voice = self.voices
+                .iter_mut()
+                .min_by(|v1, v2| {
+                    (v1.get_frequency() - freq) 
+                        .abs()
+                        .partial_cmp(&(v2.get_frequency() - freq).abs())
+                        .unwrap()
+                });
+
+            if let Some(voice) = closest_voice {
+                voice.play(freq);
+            }
         }
     }
 

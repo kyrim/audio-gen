@@ -23,13 +23,13 @@ fn main() {
     let (_stream, handle) = rodio::OutputStream::try_default()
         .expect("Failed to get default audio output");
     let sink = Sink::try_new(&handle).expect("Failed to create Sink");
-
+    
     // 2) Create a poly synth
-    let poly = PolySynth::new(44100, 3);
+    let poly = PolySynth::new(48000, 1);
     let poly_arc = Arc::new(Mutex::new(poly));
 
     // 3) Wrap in RodioAdapter & append to sink
-    let adapter = RodioAdapter::new(poly_arc.clone(), 44100);
+    let adapter = RodioAdapter::new(poly_arc.clone(), 48800);
     sink.append(adapter);
     sink.play();
 

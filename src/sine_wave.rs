@@ -15,10 +15,6 @@ impl SineWave {
             sample_rate,
         }
     }
-
-    pub fn reset_phase(&mut self) {
-        self.phase = 0.0; // Reset the oscillator phase
-    }
 }
 
 impl AudioSource for SineWave {
@@ -40,6 +36,8 @@ impl AudioSource for SineWave {
     }
 
     fn set_frequency(&mut self, freq: f32) {
-        self.frequency = freq;
+        // To account for Nyquist theorem.
+        // (The highest frequency component of a signal that can be accurately digitized is half the sampling rate)
+        self.frequency = freq.min(self.sample_rate as f32 / 2.0);
     }
 }

@@ -3,21 +3,21 @@ use crate::traits::AudioProcessor;
 #[derive(Clone)]
 pub struct AmpAdsr {
     // Envelope parameters (in seconds)
-    attack: f32,
-    decay: f32,
-    sustain: f32,
-    release: f32,
+    attack_s: f32,
+    decay_s: f32,
+    sustain_s: f32,
+    release_s: f32,
 
     // Current time in seconds since note-on
-    current_time: f32,
+    current_time_s: f32,
 
-    // If we've released the note:
-    pub released: bool,
-    // The time (in seconds) when release was triggered
-    release_start_time: f32,
-    // The amplitude at the exact moment release was triggered
+    pub is_released: bool,
+    // The time (in seconds) when release started
+    release_start_time_s: f32,
+    // The amplitude at the exact moment release started.
     release_start_amp: f32,
 
+    // The amplitude at the exact moment retrigger started.
     retrigger_start_amp: f32,
 
     // Sample rate
@@ -27,15 +27,15 @@ pub struct AmpAdsr {
 impl AmpAdsr {
     /// Create a new ADSR envelope.
     /// All times are in seconds: e.g., atk = 0.01, dec = 0.1, sus = 0.8, rel = 0.2
-    pub fn new(sample_rate: f32, attack: f32, decay: f32, sustain: f32, release: f32) -> Self {
+    pub fn new(sample_rate: f32, attack_s: f32, decay_s: f32, sustain_s: f32, release_s: f32) -> Self {
         Self {
-            attack,
-            decay,
-            sustain,
-            release,
-            current_time: 0.0,
-            released: false,
-            release_start_time: 0.0,
+            attack_s,
+            decay_s,
+            sustain_s,
+            release_s,
+            current_time_s: 0.0,
+            is_released: false,
+            release_start_time_s: 0.0,
             release_start_amp: 0.0,
             retrigger_start_amp: 0.0,
             sample_rate,
@@ -45,70 +45,69 @@ impl AmpAdsr {
     /// Called when the note first starts (re-trigger).
     pub fn trigger(&mut self) {
         self.retrigger_start_amp = self.get_amplitude();
-        self.current_time = 0.0;
-        self.released = false;
-        self.release_start_time = 0.0;
+        self.current_time_s = 0.0;
+        self.is_released = false;
+        self.release_start_time_s = 0.0;
         self.release_start_amp = 0.0;
     }
 
     /// Called when the note ends (begin release stage).
     pub fn release(&mut self) {
-        if !self.released {
-            self.release_start_time = self.current_time;
+        if !self.is_released {
+            self.release_start_time_s = self.current_time_s;
             self.release_start_amp = self.get_amplitude();
-            self.released = true;
+            self.is_released = true;
         }
     }
 
     /// Return the current amplitude (0..1).
     pub fn get_amplitude(&self) -> f32 {
-        // Break envelope into time regions
-        let retrigger_time = 0.03;
-        let atk_time = retrigger_time + self.attack;
-        let dec_time = atk_time + self.decay; // Attack + Decay
-        let rel_time = self.release;
+ 
+        // Retrigger time is to avoid pops, when a voice is stolen.
+        // On the retrigger, you may go from being in the middle of a envelope
+        // to the start of the attack phase, a sharp change in envelope, causing a pop.
+        let retrigger_time = 0.01; // 10ms
+        let attack_time = retrigger_time + self.attack_s;
+        let decay_time = attack_time + self.decay_s; // Attack + Decay
 
-        if self.released {
+        if self.is_released {
             // Time since release triggered
-            let t_rel = self.current_time - self.release_start_time;
-            // If we've fully finished releasing, amplitude is 0
-            if t_rel >= rel_time {
-                0.0
-            } else {
-                // Fade from release_start_amp to 0 over 'release' seconds
-                let ratio = t_rel / rel_time;
-                self.release_start_amp * (1.0 - ratio)
-            }
-        } else {
-            // Attack -> Decay -> Sustain (before release)
-            if self.current_time < retrigger_time {
-                if  self.current_time >= retrigger_time {
-                    0.0
-                } else {
-                    // Fade from release_start_amp to 0 over 'release' seconds
-                    let ratio =  self.current_time / retrigger_time;
-                    self.retrigger_start_amp * (1.0 - ratio)
-                }
-            } else if self.current_time < atk_time {
-                // Attack: amplitude 0..1
-                self.current_time / atk_time
-            } else if self.current_time < dec_time {
-                // Decay: amplitude from 1..sustain
-                let t_dec = self.current_time - atk_time;
-                let dec_ratio = t_dec / self.decay; // 0..1
-                1.0 - (1.0 - self.sustain) * dec_ratio
-            } else {
-                // Sustain
-                self.sustain
-            }
+            let time_releasing = self.current_time_s - self.release_start_time_s;
+            // Fade from release_start_amp to 0 over 'release' seconds. Ensure we check that we don't go over 0.
+            let ratio_released = (time_releasing / self.release_s).min(1.0);
+
+            return self.release_start_amp * (1.0 - ratio_released);
         }
+        
+        if self.current_time_s <= retrigger_time {
+            let ratio_retriggered =  (self.current_time_s / retrigger_time).min(1.0);
+            
+            return self.retrigger_start_amp * (1.0 - ratio_retriggered);
+        }
+        
+        if self.current_time_s <= attack_time {
+            // Get how far through attack we are in seconds
+            let t_attk = self.current_time_s - retrigger_time;
+            // Get a ratio so we can calculate progress
+            return t_attk / self.attack_s;
+        }
+         
+        if self.current_time_s <= decay_time {
+            // Decay: amplitude from 1..sustain
+            let t_dec = self.current_time_s - attack_time;
+            let dec_ratio = t_dec / self.decay_s; // 0..1
+
+            return 1.0 - (1.0 - self.sustain_s) * dec_ratio;
+        }
+
+        self.sustain_s
     }
 
     /// Returns `true` if the envelope has completely finished its release.
     pub fn is_done(&self) -> bool {
         // The envelope is done if we're in the released phase AND
         // the time since release started exceeds the release duration.
-        self.released && (self.current_time - self.release_start_time) >= self.release
+        self.is_released && (self.current_time_s - self.release_start_time_s) >= self.release_s
     }
 }
 
@@ -118,7 +117,7 @@ impl AudioProcessor for AmpAdsr {
         let amp = self.get_amplitude();
 
         // Advance time by one sample
-        self.current_time += 1.0 / self.sample_rate;
+        self.current_time_s += 1.0 / self.sample_rate;
 
         input * amp
     }

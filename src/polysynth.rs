@@ -13,14 +13,13 @@ impl Voice {
     pub fn new(sample_rate: u32, freq: f32) -> Self {
         Self {
             osc: SineWave::new(sample_rate, freq),
-            env: AmpAdsr::new(sample_rate as f32, 0.05, 0.1, 0.8, 0.3),
+            env: AmpAdsr::new(sample_rate as f32, 0.02, 0.2, 1.0, 0.2),
             active: false,
         }
     }
 
     pub fn play(&mut self, freq: f32) {
         self.osc.set_frequency(freq);
-        //self.osc.reset_phase(); // Reset the phase of the oscillator
         self.env.trigger();
         self.active = true;
     }

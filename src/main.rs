@@ -29,7 +29,7 @@ fn main() {
     let poly_arc = Arc::new(Mutex::new(poly));
 
     // 3) Wrap in RodioAdapter & append to sink
-    let adapter = RodioAdapter::new(poly_arc.clone(), 48800);
+    let adapter = RodioAdapter::new(poly_arc.clone(), 48000);
     sink.append(adapter);
     sink.play();
 

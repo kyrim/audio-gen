@@ -1,11 +1,13 @@
+use core::panic;
+
 use crate::traits::AudioProcessor;
 
 #[derive(Clone)]
-pub struct AmpAdsr {
-    // Envelope parameters (in seconds)
+pub struct AdsrEnvelope {
+    // Envelope parameters (_s = in seconds)
     attack_s: f32,
     decay_s: f32,
-    sustain_s: f32,
+    sustain_level: f32, // Note: sustain isn't time based
     release_s: f32,
 
     // Current time in seconds since note-on
@@ -24,14 +26,12 @@ pub struct AmpAdsr {
     sample_rate: f32,
 }
 
-impl AmpAdsr {
-    /// Create a new ADSR envelope.
-    /// All times are in seconds: e.g., atk = 0.01, dec = 0.1, sus = 0.8, rel = 0.2
-    pub fn new(sample_rate: f32, attack_s: f32, decay_s: f32, sustain_s: f32, release_s: f32) -> Self {
+impl AdsrEnvelope {
+    pub fn new(sample_rate: f32, attack_s: f32, decay_s: f32, sustain_level: f32, release_s: f32) -> Self {
         Self {
             attack_s,
             decay_s,
-            sustain_s,
+            sustain_level,
             release_s,
             current_time_s: 0.0,
             is_released: false,
@@ -42,7 +42,7 @@ impl AmpAdsr {
         }
     }
 
-    /// Called when the note first starts (re-trigger).
+    /// Called when the note first starts (Either first trigger, or retrigger).
     pub fn trigger(&mut self) {
         self.retrigger_start_amp = self.get_amplitude();
         self.current_time_s = 0.0;
@@ -62,45 +62,60 @@ impl AmpAdsr {
 
     /// Return the current amplitude (0..1).
     pub fn get_amplitude(&self) -> f32 {
- 
-        // Retrigger time is to avoid pops, when a voice is stolen.
-        // On the retrigger, you may go from being in the middle of a envelope
-        // to the start of the attack phase, a sharp change in envelope, causing a pop.
-        let retrigger_time = 0.01; // 10ms
-        let attack_time = retrigger_time + self.attack_s;
-        let decay_time = attack_time + self.decay_s; // Attack + Decay
-
         if self.is_released {
             // Time since release triggered
-            let time_releasing = self.current_time_s - self.release_start_time_s;
+            let time_releasing_s = self.current_time_s - self.release_start_time_s;
             // Fade from release_start_amp to 0 over 'release' seconds. Ensure we check that we don't go over 0.
-            let ratio_released = (time_releasing / self.release_s).min(1.0);
+            let ratio_released = time_releasing_s / self.release_s;
+
+            if ratio_released > 1.0 {
+                return 0.0;
+            }
 
             return self.release_start_amp * (1.0 - ratio_released);
         }
+
+        // Retrigger time is to avoid pops, when a voice is stolen.
+        // On the retrigger, you may go from being in the middle of a envelope
+        // to the start of the attack phase, a sharp change in envelope, causing a pop.
+        // TODO: Something that would be really good is if the retrigger wasn't fixed, and rather was based on how
+        // close to 0 it is, this may reduce latency.
+        let retrigger_s = 0.01; // 10ms
         
-        if self.current_time_s <= retrigger_time {
-            let ratio_retriggered =  (self.current_time_s / retrigger_time).min(1.0);
+        if self.current_time_s <= retrigger_s {
+            let ratio_retriggered =  self.current_time_s / retrigger_s;
+    
+            if ratio_retriggered > 1.0 {
+                panic!("ratio_retriggered of '{}' should not be more than 1, we are likely in the wrong stage", ratio_retriggered);
+            }
             
             return self.retrigger_start_amp * (1.0 - ratio_retriggered);
         }
         
-        if self.current_time_s <= attack_time {
-            // Get how far through attack we are in seconds
-            let t_attk = self.current_time_s - retrigger_time;
+        let attack_end_time_s = retrigger_s + self.attack_s;
+
+        if self.current_time_s <= attack_end_time_s {
+            // Get how far through attack we are in seconds.
+            let time_attacking_s = self.current_time_s - retrigger_s;
             // Get a ratio so we can calculate progress
-            return t_attk / self.attack_s;
+            return time_attacking_s / self.attack_s;
         }
-         
-        if self.current_time_s <= decay_time {
+
+        let decay_end_time_s = attack_end_time_s + self.decay_s;
+
+        if self.current_time_s <= decay_end_time_s {
             // Decay: amplitude from 1..sustain
-            let t_dec = self.current_time_s - attack_time;
-            let dec_ratio = t_dec / self.decay_s; // 0..1
+            let time_decaying = self.current_time_s - attack_end_time_s;
+            let decay_ratio = time_decaying / self.decay_s; // 0..1
 
-            return 1.0 - (1.0 - self.sustain_s) * dec_ratio;
+            if decay_ratio > 1.0 {
+                panic!("dec_ratio of '{}' should not be more than 1, we are likely in the wrong stage", decay_ratio);
+            }
+
+            return 1.0 - (1.0 - self.sustain_level) * decay_ratio;
         }
 
-        self.sustain_s
+        self.sustain_level
     }
 
     /// Returns `true` if the envelope has completely finished its release.
@@ -111,7 +126,7 @@ impl AmpAdsr {
     }
 }
 
-impl AudioProcessor for AmpAdsr {
+impl AudioProcessor for AdsrEnvelope {
     fn process_sample(&mut self, input: f32) -> f32 {
         // Get current amplitude
         let amp = self.get_amplitude();

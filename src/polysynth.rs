@@ -1,11 +1,11 @@
 use crate::sine_wave::SineWave;
-use crate::amp_adsr::AmpAdsr;
+use crate::adsr_envelope::AdsrEnvelope;
 use crate::traits::{AudioSource, AudioProcessor};
 
 #[derive(Clone)]
 pub struct Voice {
     pub osc: SineWave,
-    pub env: AmpAdsr,
+    pub env: AdsrEnvelope,
     pub active: bool,
 }
 
@@ -13,7 +13,7 @@ impl Voice {
     pub fn new(sample_rate: u32, freq: f32) -> Self {
         Self {
             osc: SineWave::new(sample_rate, freq),
-            env: AmpAdsr::new(sample_rate as f32, 0.02, 0.2, 1.0, 0.2),
+            env: AdsrEnvelope::new(sample_rate as f32, 0.02, 0.2, 1.0, 0.2),
             active: false,
         }
     }

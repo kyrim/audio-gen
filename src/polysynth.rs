@@ -1,11 +1,13 @@
 use crate::sine_wave::SineWave;
 use crate::adsr_envelope::AdsrEnvelope;
+use crate::gain::Gain;
 use crate::traits::{AudioSource, AudioProcessor};
 
 #[derive(Clone)]
 pub struct Voice {
     pub osc: SineWave,
     pub env: AdsrEnvelope,
+    pub gain: Gain,
     pub active: bool,
 }
 
@@ -14,6 +16,7 @@ impl Voice {
         Self {
             osc: SineWave::new(sample_rate, freq),
             env: AdsrEnvelope::new(sample_rate as f32, 0.02, 0.2, 1.0, 0.2),
+            gain: Gain::new(0.1),
             active: false,
         }
     }
@@ -37,13 +40,14 @@ impl Voice {
             return 0.0;
         }
         let raw = self.osc.next_sample();
-        let out = self.env.process_sample(raw);
+        let osc_out = self.env.process_sample(raw);
+        let gain_out = self.gain.process_sample(osc_out);
 
         // If envelope is effectively done
         if self.env.is_done() {
             self.active = false;
         }
-        out
+        gain_out
     }
 }
 

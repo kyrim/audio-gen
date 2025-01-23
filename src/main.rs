@@ -15,6 +15,8 @@ mod traits;
 mod polysynth;
 use polysynth::PolySynth;
 
+mod gain;
+
 mod rodio_adapter;
 use rodio_adapter::RodioAdapter;
 

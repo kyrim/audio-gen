@@ -1,5 +1,3 @@
-use core::panic;
-
 use crate::traits::AudioProcessor;
 
 #[derive(Clone)]

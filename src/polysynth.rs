@@ -1,56 +1,5 @@
-use crate::sine_wave::SineWave;
-use crate::adsr_envelope::AdsrEnvelope;
-use crate::gain::Gain;
-use crate::traits::{AudioSource, AudioProcessor};
-
-#[derive(Clone)]
-pub struct Voice {
-    pub osc: SineWave,
-    pub env: AdsrEnvelope,
-    pub gain: Gain,
-    pub active: bool,
-}
-
-impl Voice {
-    pub fn new(sample_rate: u32, freq: f32) -> Self {
-        Self {
-            osc: SineWave::new(sample_rate, freq),
-            env: AdsrEnvelope::new(sample_rate as f32, 0.02, 0.2, 1.0, 0.2),
-            gain: Gain::new(0.1),
-            active: false,
-        }
-    }
-
-    pub fn play(&mut self, freq: f32) {
-        self.osc.set_frequency(freq);
-        self.env.trigger();
-        self.active = true;
-    }
-
-    pub fn stop(&mut self) {
-        self.env.release();
-    }
-
-    pub fn get_frequency(&self) -> f32 {
-        self.osc.frequency
-    }
-
-    pub fn next_sample(&mut self) -> f32 {
-        if !self.active {
-            return 0.0;
-        }
-        let raw = self.osc.next_sample();
-        let osc_out = self.env.process_sample(raw);
-        let gain_out = self.gain.process_sample(osc_out);
-
-        // If envelope is effectively done
-        if self.env.is_done() {
-            self.active = false;
-        }
-        gain_out
-    }
-}
-
+use crate::traits::AudioSource;
+use crate::voice::Voice;
 
 #[derive(Clone)]
 pub struct PolySynth {

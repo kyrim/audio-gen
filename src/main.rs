@@ -15,7 +15,9 @@ mod traits;
 mod polysynth;
 use polysynth::PolySynth;
 
+mod voice;
 mod gain;
+mod ramp_envelope;
 
 mod rodio_adapter;
 use rodio_adapter::RodioAdapter;
@@ -27,7 +29,7 @@ fn main() {
     let sink = Sink::try_new(&handle).expect("Failed to create Sink");
     
     // 2) Create a poly synth
-    let poly = PolySynth::new(48000, 5);
+    let poly = PolySynth::new(48000, 3);
     let poly_arc = Arc::new(Mutex::new(poly));
 
     // 3) Wrap in RodioAdapter & append to sink

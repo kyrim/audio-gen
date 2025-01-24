@@ -9,6 +9,8 @@ use winit::{
 };
 
 mod sine_wave;
+mod saw_wave;
+mod square_wave;
 mod adsr_envelope;
 mod traits;
 

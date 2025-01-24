@@ -1,12 +1,14 @@
 use crate::ramp_envelope::RampEnvelope;
 use crate::traits::{AudioSource, AudioProcessor};
 use crate::sine_wave::SineWave;
+use crate::saw_wave::SawWave;
+use crate::square_wave::SquareWave;
 use crate::adsr_envelope::AdsrEnvelope;
 use crate::gain::Gain;
 
 #[derive(Clone)]
 pub struct Voice {
-    pub osc: SineWave,
+    pub osc: SquareWave,
     pub env: AdsrEnvelope,
     pub gain: Gain,
     frequency_env: RampEnvelope,
@@ -18,7 +20,7 @@ pub struct Voice {
 impl Voice {
     pub fn new(sample_rate: u32, frequency: f32) -> Self {
         Self {
-            osc: SineWave::new(sample_rate, frequency),
+            osc: SquareWave::new(sample_rate, frequency),
             env: AdsrEnvelope::new(sample_rate as f32, 0.02, 0.2, 1.0, 0.2),
             frequency_env: RampEnvelope::new(sample_rate as f32, 0.1),
             gain: Gain::new(0.9),

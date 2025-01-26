@@ -3,6 +3,16 @@ name = "audio-gen"
 version = "0.1.0"
 edition = "2021"
 
+[workspace]
+members = [
+    "xtask",
+]
+
 [dependencies]
+nih_plug = { git = "https://github.com/robbert-vdh/nih-plug.git", features = ["assert_process_allocs"] }
+nih_plug_vizia = { git = "https://github.com/robbert-vdh/nih-plug.git" }
 rodio = "0.17"
 winit = "0.28"
+
+[lib]
+crate-type = ["cdylib"]

@@ -1,0 +1,4 @@
+# in my_vst_plugin/.cargo/config.toml:
+
+[alias]
+xtask = "run --package xtask --release --"

@@ -1,20 +1,20 @@
 use nih_plug::prelude::*;
 use nih_plug_vizia::ViziaState;
-use traits::AudioSource;
+ use traits::AudioSource;
 use std::sync::Arc;
 
-mod sine_wave;
-mod saw_wave;
-mod square_wave;
-mod adsr_envelope;
-mod traits;
+ mod sine_wave;
+ mod saw_wave;
+ mod square_wave;
+ mod adsr_envelope;
+ mod traits;
 
-mod polysynth;
-use polysynth::PolySynth;
+ mod polysynth;
+ use polysynth::PolySynth;
 
-mod voice;
-mod gain;
-mod ramp_envelope;
+ mod voice;
+ mod gain;
+ mod ramp_envelope;
 
 mod editor;
 
@@ -113,7 +113,7 @@ impl Plugin for PolySynthPlugin {
     fn initialize(
         &mut self,
         _audio_io_layout: &AudioIOLayout,
-        buffer_config: &BufferConfig,
+        _buffer_config: &BufferConfig,
         _context: &mut impl InitContext<Self>,
     ) -> bool {
         true
@@ -128,15 +128,14 @@ impl Plugin for PolySynthPlugin {
 
         // Pull in note events
         while let Some(event) = context.next_event() {
-            let mut freq = 0.0;
 
             match event {
                 NoteEvent::NoteOn { timing: _, voice_id: _, channel:_, note, velocity:_ } => {
-                    freq = midi_note_to_frequency(note);
+                    let freq = midi_note_to_frequency(note);
                     self.poly_synth.play(freq);
                 }
                 NoteEvent::NoteOff { timing:_, voice_id:_, channel:_, note, velocity:_ } => {
-                    freq = midi_note_to_frequency(note);
+                    let freq = midi_note_to_frequency(note);
                     self.poly_synth.stop(freq);
                 }
                 _ => {}
@@ -146,7 +145,7 @@ impl Plugin for PolySynthPlugin {
             // Fill the audio buffer
             // For each sample index, `channels` is a slice where `channels[0]` is the left channel,
             // `channels[1]` is the right channel, etc.
-            for (_sample_idx, channels) in buffer.iter_samples().enumerate() {
+            for channels in buffer.iter_samples() {
                 // Get the next sample from your synth/oscillator
                 let next_out = self.poly_synth.next_sample();
 

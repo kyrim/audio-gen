@@ -30,8 +30,20 @@ struct PolySynthParams {
     #[persist = "editor-state"]
     editor_state: Arc<ViziaState>,
 
+    #[id = "attack"]
+    pub attack: FloatParam,
+
+    #[id = "decay"]
+    pub decay: FloatParam,
+
+    #[id = "sustain"]
+    pub sustain: FloatParam,
+
     #[id = "release"]
     pub release: FloatParam,
+
+    #[id = "glide"]
+    pub glide: FloatParam,
 }
 
 impl Default for PolySynthPlugin {
@@ -48,19 +60,41 @@ impl Default for PolySynthParams {
         Self {
             editor_state: editor::default_state(),
 
-            release: FloatParam::new(
-                "Release",
-                util::db_to_gain(0.0),
-                FloatRange::Skewed {
-                    min: util::db_to_gain(-30.0),
-                    max: util::db_to_gain(30.0),
-                    factor: FloatRange::gain_skew_factor(-30.0, 30.0),
-                },
+            attack: FloatParam::new(
+                "Attack",
+                0.2,
+                FloatRange::Linear { min: 0.0, max: 10.0 },
             )
             .with_smoother(SmoothingStyle::Logarithmic(50.0))
-            .with_unit(" dB")
-            .with_value_to_string(formatters::v2s_f32_gain_to_db(2))
-            .with_string_to_value(formatters::s2v_f32_gain_to_db()),
+            .with_unit(" seconds"),
+            decay: FloatParam::new(
+                "Decay",
+                0.2,
+                FloatRange::Linear { min: 0.0, max: 10.0 },
+            )
+            .with_smoother(SmoothingStyle::Logarithmic(50.0))
+            .with_unit(" seconds"),
+            sustain: FloatParam::new(
+                "Sustain",
+                1.0,
+                FloatRange::Linear { min: 0.0, max: 1.0 },
+            )
+            .with_smoother(SmoothingStyle::Logarithmic(50.0))
+            .with_unit(" level"),
+            release: FloatParam::new(
+                "Release",
+                0.2,
+                FloatRange::Linear { min: 0.0, max: 10.0 },
+            )
+            .with_smoother(SmoothingStyle::Logarithmic(50.0))
+            .with_unit(" seconds"),
+            glide: FloatParam::new(
+                "Glide",
+                0.1,
+                FloatRange::Linear { min: 0.0, max: 10.0 },
+            )
+            .with_smoother(SmoothingStyle::Logarithmic(50.0))
+            .with_unit(" seconds"),
         }
     }
 }
@@ -141,19 +175,26 @@ impl Plugin for PolySynthPlugin {
                 _ => {}
             }
         }
+    
+        // Fill the audio buffer
+        // For each sample index, `channels` is a slice where `channels[0]` is the left channel,
+        // `channels[1]` is the right channel, etc.
+        for channels in buffer.iter_samples() {
 
-            // Fill the audio buffer
-            // For each sample index, `channels` is a slice where `channels[0]` is the left channel,
-            // `channels[1]` is the right channel, etc.
-            for channels in buffer.iter_samples() {
-                // Get the next sample from your synth/oscillator
-                let next_out = self.poly_synth.next_sample();
+            self.poly_synth.set_attack(self.params.attack.smoothed.next());
+            self.poly_synth.set_decay(self.params.decay.smoothed.next());
+            self.poly_synth.set_sustain(self.params.sustain.smoothed.next());
+            self.poly_synth.set_release(self.params.release.smoothed.next());
+            self.poly_synth.set_glide(self.params.glide.smoothed.next());
 
-                // Write that sample to all channels
-                for sample_in_channel in channels {
-                    *sample_in_channel = next_out;
-                }
+            // Get the next sample from your synth/oscillator
+            let next_out = self.poly_synth.next_sample();
+
+            // Write that sample to all channels
+            for sample_in_channel in channels {
+                *sample_in_channel = next_out;
             }
+        }
 
         ProcessStatus::Normal
     }

@@ -42,6 +42,36 @@ impl PolySynth {
             .filter(|v| v.active && v.get_frequency() == freq)
             .for_each(|v| v.stop());
     }
+
+    pub fn set_attack(&mut self, attack_s: f32) {
+        self.voices
+            .iter_mut()
+            .for_each(|v| v.env.set_attack(attack_s));
+    }
+
+    pub fn set_decay(&mut self, decay_s: f32) {
+        self.voices
+            .iter_mut()
+            .for_each(|v| v.env.set_decay(decay_s));
+    }
+
+    pub fn set_sustain(&mut self, sustain_s: f32) {
+        self.voices
+            .iter_mut()
+            .for_each(|v| v.env.set_sustain(sustain_s));
+    }
+
+    pub fn set_release(&mut self, release_s: f32) {
+        self.voices
+            .iter_mut()
+            .for_each(|v| v.env.set_release(release_s));
+    }
+
+    pub fn set_glide(&mut self, glide_s: f32) {
+        self.voices
+            .iter_mut()
+            .for_each(|v| v.frequency_env.set_ramp(glide_s));
+    }
 }
 
 impl AudioSource for PolySynth {

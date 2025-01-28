@@ -58,6 +58,22 @@ impl AdsrEnvelope {
         }
     }
 
+    pub fn set_attack(&mut self, attack_s: f32) {
+        self.attack_s = attack_s;
+    }
+
+    pub fn set_decay(&mut self, decay_s: f32) {
+        self.decay_s = decay_s;
+    }
+
+    pub fn set_sustain(&mut self, sustain_level: f32) {
+        self.sustain_level = sustain_level;
+    }
+
+    pub fn set_release(&mut self, release_s: f32) {
+        self.release_s = release_s;
+    }
+
     /// Return the current amplitude (0..1).
     pub fn get_amplitude(&self) -> f32 {
         if self.is_released {

@@ -9,7 +9,7 @@ pub struct Voice {
     pub osc: SawWave,
     pub env: AdsrEnvelope,
     pub gain: Gain,
-    frequency_env: RampEnvelope,
+    pub frequency_env: RampEnvelope,
     start_frequency: f32,
     end_frequency: f32,
     pub active: bool,

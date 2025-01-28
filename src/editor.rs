@@ -15,7 +15,7 @@ impl Model for Data {}
 
 // Makes sense to also define this here, makes it a bit easier to keep track of
 pub(crate) fn default_state() -> Arc<ViziaState> {
-    ViziaState::new(|| (200, 150))
+    ViziaState::new(|| (400, 300))
 }
 
 pub(crate) fn create(
@@ -40,8 +40,20 @@ pub(crate) fn create(
                 .child_top(Stretch(1.0))
                 .child_bottom(Pixels(0.0));
 
-            Label::new(cx, "Test");
+            Label::new(cx, "Attack");
+            ParamSlider::new(cx, Data::params, |params| &params.attack);
+
+            Label::new(cx, "Decay");
+            ParamSlider::new(cx, Data::params, |params| &params.decay);
+
+            Label::new(cx, "Sustain");
+            ParamSlider::new(cx, Data::params, |params| &params.sustain);
+
+            Label::new(cx, "Release");
             ParamSlider::new(cx, Data::params, |params| &params.release);
+
+            Label::new(cx, "Glide");
+            ParamSlider::new(cx, Data::params, |params| &params.glide);
         })
         .row_between(Pixels(0.0))
         .child_left(Stretch(1.0))

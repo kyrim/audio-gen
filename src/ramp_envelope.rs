@@ -23,6 +23,10 @@ impl RampEnvelope {
         self.current_time_s = 0.0;
     }
 
+    pub fn set_ramp(&mut self, ramp_time_s: f32) {
+        self.ramp_time_s = ramp_time_s;
+    }
+
     fn get_amount(&self) -> f32 {
         (self.current_time_s / self.ramp_time_s).min(1.0)
     }

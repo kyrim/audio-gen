@@ -1,3 +1,4 @@
+use nih_plug::nih_error;
 use nih_plug::prelude::Editor;
 use nih_plug_vizia::vizia::prelude::*;
 use nih_plug_vizia::widgets::*;
@@ -15,7 +16,7 @@ impl Model for Data {}
 
 // Makes sense to also define this here, makes it a bit easier to keep track of
 pub(crate) fn default_state() -> Arc<ViziaState> {
-    ViziaState::new(|| (400, 300))
+    ViziaState::new(|| (400, 350))
 }
 
 pub(crate) fn create(
@@ -25,6 +26,10 @@ pub(crate) fn create(
     create_vizia_editor(editor_state, ViziaTheming::Custom, move |cx, _| {
         assets::register_noto_sans_light(cx);
         assets::register_noto_sans_thin(cx);
+
+        if let Err(err) = cx.add_stylesheet(include_style!("src/theme.css")) {
+            nih_error!("Failed to load stylesheet: {err:?}")
+        }
 
         Data {
             params: params.clone(),

@@ -1,0 +1,21 @@
+:root {
+    background-color: #0a0a0a;
+    color: #fafafa;
+    font-size: 15;
+    /*
+        * NOTE: vizia's font rendering looks way too dark and thick. Going one font
+        *       weight lower seems to compensate for this.
+        */
+    font-weight: light;
+}
+
+param-slider {
+    border-color: #fafafa;
+}
+
+param-slider .fill {
+background-color: #222222;
+}
+param-slider .fill--modulation {
+background-color: #a4eafc69;
+}

@@ -66,35 +66,39 @@ impl Default for PolySynthParams {
                 FloatRange::Linear { min: 0.0, max: 1.0 },
             )
             .with_smoother(SmoothingStyle::Linear(50.0))
-            .with_unit(" seconds"),
+            .with_step_size(0.01)
+            .with_unit("s"),
             decay: FloatParam::new(
                 "Decay",
                 0.2,
                 FloatRange::Linear { min: 0.0, max: 1.0 },
             )
             .with_smoother(SmoothingStyle::Linear(50.0))
-            .with_unit(" seconds"),
+            .with_step_size(0.01)
+            .with_unit("s"),
             sustain: FloatParam::new(
                 "Sustain",
                 1.0,
                 FloatRange::Linear { min: 0.0, max: 1.0 },
             )
             .with_smoother(SmoothingStyle::Linear(50.0))
-            .with_unit(" level"),
+            .with_step_size(0.01),
             release: FloatParam::new(
                 "Release",
                 0.2,
                 FloatRange::Linear { min: 0.0, max: 1.0 },
             )
             .with_smoother(SmoothingStyle::Linear(50.0))
-            .with_unit(" seconds"),
+            .with_step_size(0.01)
+            .with_unit("s"),
             glide: FloatParam::new(
                 "Glide",
                 0.1,
                 FloatRange::Linear { min: 0.0, max: 1.0 },
             )
             .with_smoother(SmoothingStyle::Linear(50.0))
-            .with_unit(" seconds"),
+            .with_step_size(0.01)
+            .with_unit("s"),
         }
     }
 }

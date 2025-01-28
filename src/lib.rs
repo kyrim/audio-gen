@@ -63,37 +63,37 @@ impl Default for PolySynthParams {
             attack: FloatParam::new(
                 "Attack",
                 0.2,
-                FloatRange::Linear { min: 0.0, max: 10.0 },
+                FloatRange::Linear { min: 0.0, max: 1.0 },
             )
-            .with_smoother(SmoothingStyle::Logarithmic(50.0))
+            .with_smoother(SmoothingStyle::Linear(50.0))
             .with_unit(" seconds"),
             decay: FloatParam::new(
                 "Decay",
                 0.2,
-                FloatRange::Linear { min: 0.0, max: 10.0 },
+                FloatRange::Linear { min: 0.0, max: 1.0 },
             )
-            .with_smoother(SmoothingStyle::Logarithmic(50.0))
+            .with_smoother(SmoothingStyle::Linear(50.0))
             .with_unit(" seconds"),
             sustain: FloatParam::new(
                 "Sustain",
                 1.0,
                 FloatRange::Linear { min: 0.0, max: 1.0 },
             )
-            .with_smoother(SmoothingStyle::Logarithmic(50.0))
+            .with_smoother(SmoothingStyle::Linear(50.0))
             .with_unit(" level"),
             release: FloatParam::new(
                 "Release",
                 0.2,
-                FloatRange::Linear { min: 0.0, max: 10.0 },
+                FloatRange::Linear { min: 0.0, max: 1.0 },
             )
-            .with_smoother(SmoothingStyle::Logarithmic(50.0))
+            .with_smoother(SmoothingStyle::Linear(50.0))
             .with_unit(" seconds"),
             glide: FloatParam::new(
                 "Glide",
                 0.1,
-                FloatRange::Linear { min: 0.0, max: 10.0 },
+                FloatRange::Linear { min: 0.0, max: 1.0 },
             )
-            .with_smoother(SmoothingStyle::Logarithmic(50.0))
+            .with_smoother(SmoothingStyle::Linear(50.0))
             .with_unit(" seconds"),
         }
     }

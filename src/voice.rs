@@ -1,4 +1,5 @@
 use crate::ramp_envelope::RampEnvelope;
+use crate::stereo_sample::{self, StereoSample};
 use crate::traits::{AudioSource, AudioProcessor};
 use crate::saw_wave::SawWave;
 use crate::adsr_envelope::AdsrEnvelope;
@@ -44,12 +45,16 @@ impl Voice {
         self.end_frequency
     }
 
-    pub fn next_sample(&mut self) -> f32 {
+    pub fn next_sample(&mut self) -> StereoSample {
         if !self.active {
-            return 0.0;
+            return StereoSample::from_mono(0.0);
         }
 
-        let freq = self.start_frequency + (self.frequency_env.process_sample(self.end_frequency - self.start_frequency));
+        // TODO: Maybe make this mono by default?
+        let frequency_diff = StereoSample::from_mono(self.end_frequency - self.start_frequency);
+        let env_sample = self.frequency_env.process_sample(frequency_diff).left;
+
+        let freq = self.start_frequency + env_sample;
         self.osc.set_frequency(freq);
 
         let raw = self.osc.next_sample();

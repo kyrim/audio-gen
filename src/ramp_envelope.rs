@@ -1,4 +1,4 @@
-use crate::traits::AudioProcessor;
+use crate::{stereo_sample::StereoSample, traits::AudioProcessor};
 
 #[derive(Clone)]
 pub struct RampEnvelope {
@@ -33,13 +33,13 @@ impl RampEnvelope {
 }
 
 impl AudioProcessor for RampEnvelope {
-    fn process_sample(&mut self, input: f32) -> f32 {
+    fn process_sample(&mut self, input: StereoSample) -> StereoSample {
         // Get current amplitude
         let amount = self.get_amount();
 
         // Advance time by one sample
         self.current_time_s += 1.0 / self.sample_rate;
 
-        input * amount
+        StereoSample { left: input.left * amount, right: input.right * amount }
     }
 }

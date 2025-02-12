@@ -1,4 +1,4 @@
-use crate::traits::AudioProcessor;
+use crate::{stereo_sample::StereoSample, traits::AudioProcessor};
 
 #[derive(Clone)]
 pub struct AdsrEnvelope {
@@ -141,13 +141,13 @@ impl AdsrEnvelope {
 }
 
 impl AudioProcessor for AdsrEnvelope {
-    fn process_sample(&mut self, input: f32) -> f32 {
+    fn process_sample(&mut self, input: StereoSample) -> StereoSample {
         // Get current amplitude
         let amp = self.get_amplitude();
 
         // Advance time by one sample
         self.current_time_s += 1.0 / self.sample_rate;
 
-        input * amp
+        StereoSample { left: (input.left * amp), right: (input.right * amp) }
     }
 }

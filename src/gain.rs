@@ -1,4 +1,4 @@
-use crate::traits::AudioProcessor;
+use crate::{stereo_sample::StereoSample, traits::AudioProcessor};
 
 #[derive(Clone)]
 pub struct Gain {
@@ -14,7 +14,7 @@ impl Gain {
 }
 
 impl AudioProcessor for Gain {
-    fn process_sample(&mut self, input: f32) -> f32 {
-        input * self.amount
+    fn process_sample(&mut self, input: StereoSample) -> StereoSample {
+        StereoSample {  left: (input.left * self.amount),  right: (input.right * self.amount) }
     }
 }

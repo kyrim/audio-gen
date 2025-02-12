@@ -1,4 +1,4 @@
-use crate::traits::AudioSource;
+use crate::{stereo_sample::StereoSample, traits::AudioSource};
 
 #[derive(Clone)]
 pub struct SineWave {
@@ -18,7 +18,7 @@ impl SineWave {
 }
 
 impl AudioSource for SineWave {
-    fn next_sample(&mut self) -> f32 {
+    fn next_sample(&mut self) -> StereoSample {
         use std::f32::consts::PI;
         
         // Calculate the sample based on current phase in [0..1]
@@ -32,7 +32,7 @@ impl AudioSource for SineWave {
             self.phase -= 1.0;
         }
 
-        sample
+        StereoSample { left: sample, right: sample }
     }
 
     fn set_frequency(&mut self, freq: f32) {

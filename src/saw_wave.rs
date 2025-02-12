@@ -1,4 +1,4 @@
-use crate::traits::AudioSource;
+use crate::{stereo_sample::StereoSample, traits::AudioSource};
 
 #[derive(Clone)]
 pub struct SawWave {
@@ -19,7 +19,7 @@ impl SawWave {
 }
 
 impl AudioSource for SawWave {
-    fn next_sample(&mut self) -> f32 {
+    fn next_sample(&mut self) -> StereoSample {
         // The saw wave can be defined as going linearly from -1.0 to +1.0 over one period [0..1].
         // We'll map self.phase in [0..1] to the saw wave range of [-1..1].
         let sample = 2.0 * self.phase - 1.0;
@@ -32,7 +32,7 @@ impl AudioSource for SawWave {
             self.phase -= 1.0;
         }
 
-        sample
+        StereoSample { left: sample, right: sample }
     }
 
     fn set_frequency(&mut self, freq: f32) {

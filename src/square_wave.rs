@@ -1,4 +1,4 @@
-use crate::traits::AudioSource;
+use crate::{stereo_sample::StereoSample, traits::AudioSource};
 
 #[derive(Clone)]
 pub struct SquareWave {
@@ -19,7 +19,7 @@ impl SquareWave {
 }
 
 impl AudioSource for SquareWave {
-    fn next_sample(&mut self) -> f32 {
+    fn next_sample(&mut self) -> StereoSample {
         // If phase is in the first half of [0..1), output +1.0.
         // Otherwise, output -1.0.
         let sample = if self.phase < 0.5 { 
@@ -36,7 +36,7 @@ impl AudioSource for SquareWave {
             self.phase -= 1.0;
         }
 
-        sample
+        StereoSample { left: sample, right: sample }
     }
 
     fn set_frequency(&mut self, freq: f32) {

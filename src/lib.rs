@@ -1,4 +1,4 @@
-use nih_plug::prelude::*;
+use nih_plug::{buffer::ChannelSamples, prelude::*};
 use nih_plug_vizia::ViziaState;
  use traits::AudioSource;
 use std::sync::Arc;
@@ -15,6 +15,7 @@ use std::sync::Arc;
  mod voice;
  mod gain;
  mod ramp_envelope;
+ mod stereo_sample;
 
 mod editor;
 
@@ -183,7 +184,7 @@ impl Plugin for PolySynthPlugin {
         // Fill the audio buffer
         // For each sample index, `channels` is a slice where `channels[0]` is the left channel,
         // `channels[1]` is the right channel, etc.
-        for channels in buffer.iter_samples() {
+        for mut channels in buffer.iter_samples() {
 
             self.poly_synth.set_attack(self.params.attack.smoothed.next());
             self.poly_synth.set_decay(self.params.decay.smoothed.next());
@@ -192,12 +193,21 @@ impl Plugin for PolySynthPlugin {
             self.poly_synth.set_glide(self.params.glide.smoothed.next());
 
             // Get the next sample from your synth/oscillator
-            let next_out = self.poly_synth.next_sample();
+            let next_out = self.poly_synth.next_sample(); 
 
-            // Write that sample to all channels
-            for sample_in_channel in channels {
-                *sample_in_channel = next_out;
-            }
+            match channels.len() {
+                1 => {
+                    // `get_mut(0)` gives you a `&mut f32` for the first channel
+                    *channels.get_mut(0).unwrap() = next_out.to_mono();
+                }
+                2 => {
+                    *channels.get_mut(0).unwrap() = next_out.left;
+                    *channels.get_mut(1).unwrap() = next_out.right;
+                }
+                _ => {
+                    // handle more channels (or do nothing)
+                }
+            }            
         }
 
         ProcessStatus::Normal

@@ -1,3 +1,4 @@
+use crate::stereo_sample::StereoSample;
 use crate::traits::AudioSource;
 use crate::voice::Voice;
 
@@ -75,11 +76,16 @@ impl PolySynth {
 }
 
 impl AudioSource for PolySynth {
-    fn next_sample(&mut self) -> f32 {
-        let mut sum = 0.0;
+    fn next_sample(&mut self) -> StereoSample {
+
+        let mut stereo_sample = StereoSample { left: 0.0, right: 0.0 };
+
         for v in self.voices.iter_mut() {
-            sum += v.next_sample();
+            let next_sample = v.next_sample();
+            stereo_sample.left += next_sample.left;
+            stereo_sample.right += next_sample.right;
         }
-        sum
+
+        stereo_sample
     }
 }

@@ -11,6 +11,7 @@ mod polysynth;
 
 mod voice;
 mod gain;
+mod stereo_sample;
 
 mod ramp_envelope;
 
